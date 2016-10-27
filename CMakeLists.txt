@@ -18,7 +18,7 @@ find_package (Matio REQUIRED)
 find_package (HDF5 REQUIRED)
 
 include_directories(include)
-include_directories (${EIGEN3_INCLUDE_DIRS})
+include_directories (${EIGEN3_INCLUDE_DIR})
 include_directories (${MATIO_INCLUDE_DIRS})
 
 if(BUILD_TESTS)

@@ -6,8 +6,8 @@
 #include <vector>
 #include <complex>
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <iostream>
 #include <MATio/MATio.hpp>
 #include <map>
