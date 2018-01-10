@@ -287,20 +287,26 @@ private:
     template < class data_t, class Derived>
     void matrix_from_var(typename std::enable_if < !NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
     {
-        Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp((data_t*)var->data, var->dims[0], var->dims[1]);
-        matrix.resize(var->dims[0], var->dims[1]);
-        matrix = tmp.template cast<Derived::Scalar>();
+        if((var->dims[0] * var->dims[1]) > 0)
+        {
+            Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp((data_t*)var->data, var->dims[0], var->dims[1]);
+            matrix.resize(var->dims[0], var->dims[1]);
+            matrix = tmp.template cast<Derived::Scalar>();
+        }
     }
 
     template <class data_t, class Derived>
     matrix_from_var(typename std::enable_if < NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
     {
-        mat_complex_split_t* cs = (mat_complex_split_t*)var->data;
-        Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp_re((data_t*)cs->Re, var->dims[0], var->dims[1]);
-        Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp_im((data_t*)cs->Im, var->dims[0], var->dims[1]);
-        matrix.resize(var->dims[0], var->dims[1]);
-        matrix.real() = tmp_re.template cast<Derived::RealScalar>();
-        matrix.imag() = tmp_im.template cast<Derived::RealScalar>();
+        if((var->dims[0] * var->dims[1]) > 0)
+        {
+            mat_complex_split_t* cs = (mat_complex_split_t*)var->data;
+            Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp_re((data_t*)cs->Re, var->dims[0], var->dims[1]);
+            Map<Matrix<data_t, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> > tmp_im((data_t*)cs->Im, var->dims[0], var->dims[1]);
+            matrix.resize(var->dims[0], var->dims[1]);
+            matrix.real() = tmp_re.template cast<Derived::RealScalar>();
+            matrix.imag() = tmp_im.template cast<Derived::RealScalar>();
+        }
     }
 
 public:
