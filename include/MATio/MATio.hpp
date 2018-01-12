@@ -11,6 +11,7 @@
 #ifndef EIGEN_MATIO_MODULE
 #define EIGEN_MATIO_MODULE
 #include <sstream>
+#include <regex>
 #include "matio.h"
 #ifndef MATIO_VERSION
 #define MATIO_VERSION (MATIO_MAJOR_VERSION * 100 + MATIO_MINOR_VERSION * 10 + MATIO_RELEASE_LEVEL)
@@ -284,8 +285,28 @@ public:
 
 private:
 
+    template < class data_t, typename Scalar>
+    void matrix_from_var(typename std::enable_if < std::is_scalar<Scalar>::value, Scalar >::type& scalar, matvar_t* var)
+    {
+        if((var->dims[0] * var->dims[1]) == 1)
+        {
+            scalar = *((data_t*)var->data);
+        }
+    }
+
+    template < class data_t, typename Scalar>
+    void matrix_from_var(typename std::enable_if < std::is_same<Scalar, std::string>::value, Scalar >::type& scalar, matvar_t* var)
+    {
+        auto s = var->dims[0] * var->dims[1];
+        if(s > 0)
+        {
+            char* p = (char*)(data_t*)var->data;
+            scalar = std::string(p, p + s);
+        }
+    }
+
     template < class data_t, class Derived>
-    void matrix_from_var(typename std::enable_if < !NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
+    void matrix_from_var(typename std::enable_if < !std::is_scalar<Derived>::value&& !NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
     {
         if((var->dims[0] * var->dims[1]) > 0)
         {
@@ -296,7 +317,7 @@ private:
     }
 
     template <class data_t, class Derived>
-    matrix_from_var(typename std::enable_if < NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
+    void matrix_from_var(typename std::enable_if < !std::is_scalar<Derived>::value&& NumTraits<typename Derived::Scalar>::IsComplex, Derived >::type& matrix, matvar_t* var)
     {
         if((var->dims[0] * var->dims[1]) > 0)
         {
@@ -398,14 +419,14 @@ public:
             return -1;
         }
 
-        if(static_cast<bool>(cvar->isComplex) != static_cast<bool>(NumTraits<typename Derived::Scalar>::IsComplex))
-        {
-            _errstr.clear();
-            _errstr << "read_mat() complex / real matrix mismatch\n ";
-            Mat_VarPrint(var, 0);
-            Mat_VarFree(var);
-            return -1;
-        }
+        /*      if(static_cast<bool>(cvar->isComplex) != static_cast<bool>(NumTraits<typename Derived::Scalar>::IsComplex))
+              {
+                  _errstr.clear();
+                  _errstr << "read_mat() complex / real matrix mismatch\n ";
+                  Mat_VarPrint(var, 0);
+                  Mat_VarFree(var);
+                  return -1;
+              }*/
 
 #define MATIO_HANDLE_READ_TYPE(MAT_T_X)                                 \
     else if (cvar->data_type == MAT_T_X                                  \
@@ -417,6 +438,11 @@ public:
 
         if(0) {}
         MATIO_HANDLE_READ_TYPE(MAT_T_INT8);
+        else if(cvar->data_type == MAT_T_UINT8 && cvar->class_type == MAT_C_CHAR)
+        {
+            typedef typename internal::type_matio<MAT_T_UINT8>::type data_t;
+            matrix_from_var<data_t, Derived>(matrix, cvar);
+        }
         MATIO_HANDLE_READ_TYPE(MAT_T_UINT8);
         MATIO_HANDLE_READ_TYPE(MAT_T_INT16);
         MATIO_HANDLE_READ_TYPE(MAT_T_UINT16);
